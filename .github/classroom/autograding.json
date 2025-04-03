@@ -1,0 +1,79 @@
+{
+  "tests": [
+
+    {
+      "name": "1.1 - Verificação Inicial Django",
+      "run": "python manage.py check",
+      "timeout": 10,
+      "points": 5
+    },
+    {
+      "name": "1.2 - Teste Model Livro",
+      "run": "python manage.py shell -c \"from livros.models import Livro; l = Livro(titulo='Teste', autor='Autor', paginas=100); l.full_clean(); print('OK')\"",
+      "output": "OK",
+      "timeout": 10,
+      "points": 10
+    },
+    {
+      "name": "1.3 - Teste View Listar Livros",
+      "run": "python manage.py shell -c \"from django.test import Client; print('OK' if Client().get('/livros/').status_code == 200 else 'ERRO')\"",
+      "output": "OK",
+      "timeout": 10,
+      "points": 10
+    },
+    {
+      "name": "1.4 - Teste Template Livros",
+      "run": "python -c \"with open('livros/templates/livros.html') as f: c = f.read(); print('OK' if '<ul>' in c and '{% for' in c else 'ERRO')\"",
+      "output": "OK",
+      "timeout": 5,
+      "points": 5
+    },
+
+    {
+      "name": "2.1 - Teste GET /api/livros/",
+      "setup": "python manage.py migrate && python manage.py shell -c \"from livros.models import Livro; Livro.objects.create(titulo='Teste', autor='Autor', paginas=100)\"",
+      "run": "python manage.py shell -c \"from django.test import Client; print('OK' if Client().get('/api/livros/').status_code == 200 else 'ERRO')\"",
+      "output": "OK",
+      "timeout": 10,
+      "points": 15
+    },
+    {
+      "name": "2.2 - Teste POST /api/livros/",
+      "run": "python manage.py shell -c \"from django.test import Client; c = Client(); r = c.post('/api/livros/', {'titulo':'API Test','autor':'Test','paginas':50}, content_type='application/json'); print('OK' if r.status_code in [200,201] else 'ERRO')\"",
+      "output": "OK",
+      "timeout": 15,
+      "points": 15
+    },
+    {
+      "name": "2.3 - Teste Serializer",
+      "run": "python manage.py shell -c \"from livros.serializers import LivroSerializer; print('OK' if LivroSerializer.Meta.fields == '__all__' else 'ERRO')\"",
+      "output": "OK",
+      "timeout": 5,
+      "points": 10
+    },
+
+    {
+      "name": "3.1 - Teste Model Usuario",
+      "run": "python manage.py shell -c \"from usuarios.models import Usuario; u = Usuario(username='test', telefone='+5511999999999'); u.set_password('test123'); u.full_clean(); print('OK')\"",
+      "output": "OK",
+      "timeout": 10,
+      "points": 10
+    },
+    {
+      "name": "3.2 - Teste Registro",
+      "setup": "python manage.py migrate",
+      "run": "python manage.py shell -c \"from django.test import Client; c = Client(); r = c.post('/auth/registro/', {'username':'test2','password':'test123','telefone':'+5511888888888'}, content_type='application/json'); print('OK' if r.status_code == 201 else f'ERRO: {r.status_code}')\"",
+      "output": "OK",
+      "timeout": 15,
+      "points": 10
+    },
+    {
+      "name": "3.3 - Teste Login JWT",
+      "setup": "python manage.py shell -c \"import uuid; from usuarios.models import Usuario; uname = f'testuser'; Usuario.objects.create_user(username=uname, password='testpass123', telefone='+5511888888888'); print(f'USERNAME_CRIADO={uname}')\"",
+      "run": "python manage.py shell -c \"import os; from django.test import Client; c = Client(); username = os.environ.get('USERNAME_CRIADO', 'testuser'); r = c.post('/auth/login/', {'username':username,'password':'testpass123'}, content_type='application/json'); print('OK' if r.status_code == 200 and 'access' in r.json() else 'ERRO')\"",
+      "output": "OK",
+      "timeout": 15,
+      "points": 10
+    }
+  ]
+}

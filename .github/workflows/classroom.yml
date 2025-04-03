@@ -1,0 +1,58 @@
+name: Autograding and Django Tests
+
+on: [push]
+
+jobs:
+  autograding:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      # Configuração do Python
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      
+      # Instalação de dependências
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install django djangorestframework djangorestframework-simplejwt
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+      
+      # Configuração do banco de dados e migrações
+      - name: Reset and Apply Migrations
+        run: |
+          # Limpa migrações anteriores
+          find . -path "*/migrations/*.py" -not -name "__init__.py" -delete
+          find . -path "*/migrations/*.pyc" -delete
+          
+          # Função para rodar makemigrations apenas se o app existir
+          check_and_migrate() {
+            if [ -d "*/$1/migrations" ]; then
+              echo "Running makemigrations for $1"
+              python manage.py makemigrations $1
+            else
+              echo "App $1 not found, skipping..."
+            fi
+          }
+          
+          # Cria novas migrações apenas se os apps existirem
+          check_and_migrate livros
+          check_and_migrate usuarios
+          python manage.py makemigrations
+          
+          # Aplica migrações
+          rm -f db.sqlite3
+          python manage.py migrate
+      
+      # Passo original do autograding
+      - name: Run Autograding
+        uses: education/autograding@v1
+      
+      # Testes Django adicionais
+      - name: Run Django Tests
+        run: |
+          python manage.py test
+      
