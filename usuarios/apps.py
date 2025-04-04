@@ -1,3 +1,6 @@
+#configuração da aplicação django,só dizaqui o nome do app 
+
+
 from django.apps import AppConfig
 
 
